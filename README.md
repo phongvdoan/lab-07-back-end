@@ -1,7 +1,7 @@
 # Lab 07
 
 **Author**: Phong Doan and Gable Shane
-**Version**: 1.0.0 (increment the patch/fix version number if you make more commits past your first submission)
+**Version**: 2.0.0 (increment the patch/fix version number if you make more commits past your first submission)
 
 ## Overview
 Use latitude and longitude data from the Google Geocoding API to request localized information from the DarkSky weather API and the Event API.
@@ -18,6 +18,9 @@ JS
 NPM
 NODE
 JQUERY
+MAPS
+GEOCODING API
+SUPERAGENT
 
 
 ## Change Log
@@ -28,3 +31,6 @@ JQUERY
 ## Credits and Collaborations
 <!-- Give credit (and a link) to other people or resources that helped you build this application. -->
 -->
+Used GEOCODING API to populate picture of the location that is being submitted by the front-end form.
+## Credits and Collaborations
+Phong And Shane

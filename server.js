@@ -14,7 +14,8 @@ let error = {
   responseText: "Sorry, something went wrong",
 }
 const GEOCODE_API_KEY = process.env.geocode_api;
-console.log('GEOCODE_API_KEY :', GEOCODE_API_KEY);
+const WEATHER_API_KEY = process.env.weather_api;
+let locationSubmitted;
 
 // LOCATION PATH
 app.get('/location', (request, res) => {
@@ -29,7 +30,8 @@ app.get('/location', (request, res) => {
       console.log(error);
       return null;
     }
-    res.send(new Geolocation(searchquery, formAddr, location));
+    locationSubmitted = new Geolocation(searchquery, formAddr, location);
+    res.send(locationSubmitted);
   })
 
 });
@@ -42,12 +44,13 @@ function Geolocation(searchquery, formAddr, location) {
 }
 // WEATHER PATH
 app.get('/weather', (request, response) => {
-  const weatherData = require('./data/darksky.json');
-  const weatherArr = weatherData.daily.data
-  const reply = weatherArr.map(byDay => {
-    return new Forecast(byDay.summary, byDay.time);
+  superagent.get(`https://api.darksky.net/forecast/${WEATHER_API_KEY}/${locationSubmitted.latitude},${locationSubmitted.longitude}`).then(res => {
+    const weatherArr = res.body.daily.data
+    const reply = weatherArr.map(byDay => {
+      return new Forecast(byDay.summary, byDay.time);
+    })
+    response.send(reply);
   })
-  response.send(reply);
 })
 // FORECAST CONSTRUCTOR FUNCTION
 function Forecast(summary, time) {
