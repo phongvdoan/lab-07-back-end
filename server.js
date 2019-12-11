@@ -8,8 +8,6 @@ require('dotenv').config();
 app.use(cors());
 
 // GLOBAL VARIABLES
-let weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
-let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 let error = {
   status: 500,
   responseText: "Sorry, something went wrong",
@@ -50,15 +48,9 @@ app.get('/weather', (request , response ) => {
 // FORECAST CONSTRUCTOR FUNCTION
 function Forecast (summary, time) {
   this.forecast = summary;
-  this.time = getDate(new Date(time));
-}
-// RETURNS FORMATTED DATE STRING
-function getDate (time) {
-  let day = weekday[time.getDay()];
-  let month = months[time.getMonth()];
-  let date = time.getDate();
-  let year = time.getFullYear();
-  return `${day} ${month} ${date} ${year}`;
+  this.time = (new Date(time * 1000)).toDateString();
 }
 
-app.listen(PORT);
+app.listen(PORT, () => {
+  console.log(`App is on PORT: ${PORT}`);
+});
