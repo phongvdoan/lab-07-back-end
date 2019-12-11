@@ -6,27 +6,32 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 app.use(cors());
+const superagent = require('superagent');
 
 // GLOBAL VARIABLES
 let error = {
   status: 500,
   responseText: "Sorry, something went wrong",
 }
+const GEOCODE_API_KEY = process.env.geocode_api;
+console.log('GEOCODE_API_KEY :', GEOCODE_API_KEY);
 
 // LOCATION PATH
-app.get('/location', (request, response) => {
-  const geoData = require('./data/geo.json');
-  let query = request.query['data'].toLowerCase();
-  const location = geoData.results[0].geometry.location;
-  const formAddr = geoData.results[0].formatted_address;
-  console.log('formAddr :', formAddr);
-  const searchquery = geoData.results[0].address_components[0].short_name.toLowerCase();
-  if (query !== searchquery) {
-    response.send(error);
-    console.log(error);
-    return null;
-  }
-  response.send(new Geolocation(searchquery, formAddr, location));
+app.get('/location', (request, res) => {
+  let query = request.query.data;
+
+  superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
+    const location = response.body.results[0].geometry.location;
+    const formAddr = response.body.results[0].formatted_address;
+    const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
+    if (query !== searchquery) {
+      response.send(error);
+      console.log(error);
+      return null;
+    }
+    res.send(new Geolocation(searchquery, formAddr, location));
+  })
+
 });
 // LOCATION CONSTRUCTOR FUNCTION
 function Geolocation(searchquery, formAddr, location) {
