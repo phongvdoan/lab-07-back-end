@@ -11,10 +11,11 @@ const superagent = require('superagent');
 // GLOBAL VARIABLES
 let error = {
   status: 500,
-  responseText: "Sorry, something went wrong",
+  responseText: 'Sorry, something went wrong',
 }
 const GEOCODE_API_KEY = process.env.geocode_api;
 const WEATHER_API_KEY = process.env.weather_api;
+const EVENTBRITE_API_KEY = process.env.event_api;
 let locationSubmitted;
 
 // LOCATION PATH
@@ -56,6 +57,26 @@ app.get('/weather', (request, response) => {
 function Forecast(summary, time) {
   this.forecast = summary;
   this.time = (new Date(time * 1000)).toDateString();
+}
+app.get('/events', (request, response) => {
+  superagent.get(`http://api.eventful.com/json/events/search?where=${locationSubmitted.latitude},${locationSubmitted.longitude}&within=25&app_key=${EVENTBRITE_API_KEY}`).then(res => {
+    let events = JSON.parse(res.text);
+    let moreEvents = events.events.event
+    let eventData = moreEvents.map(event => {
+      return new Event(event.url, event.title, event.start_time, event.description)
+    })
+    response.send(eventData);
+  }).catch( function () {
+    console.log('banana');
+    return null;
+  })
+})
+
+function Event(link, name, event_date, summary='none') {
+  this.link = link,
+  this.name = name,
+  this.event_date = event_date,
+  this.summary = summary
 }
 
 app.listen(PORT, () => {
