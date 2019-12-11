@@ -1,70 +1,69 @@
 'use strict';
+//DEPENDENCIES
 const PORT = process.env.PORT || 3000;
 const express = require('express');
 const cors = require('cors');
-
+const app = express();
+require('dotenv').config();
+app.use(cors());
+// GLOBAL VARIABLES AND DEPENDENCIES
+let weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
+let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+let error = {
+  status: 500,
+  responseText: "Sorry, something went wrong",
+}
+const PORT = process.env.PORT || 3000;
+const express = require('express');
+const cors = require('cors');
 const app = express();
 require('dotenv').config();
 app.use(cors());
 
-
-function Geolocation(latitude, longitude, formatted_address, search_query) {
-  this.latitude = latitude,
-  this.longitude = longitude,
-  this.formatted_query = formatted_address,
-  this.search_query = search_query
-}
-
-function Forcast(forecast, time) {
-  this.forecast = forecast,
-  this.time = getDate(new Date(time * 1000));
-}
-
-let error = {
-  // this.status = status,
-  status: '500',
-  responseText: 'Sorry, something went wrong'
-}
-const newData = [];
+// LOCATION PATH
 app.get('/location', (request, response) => {
   const geoData = require('./data/geo.json');
-  const geoDataResult = geoData.results[0];
-  const geoDataGeometry = geoDataResult.geometry;
-  const geoDataLocation = geoDataGeometry.location;
-  newData.push(new Geolocation(geoDataLocation.lat, geoDataLocation.lng, geoDataResult.formatted_address, geoDataResult.address_components[0].short_name.toLowerCase()));
-  if (request.query.data === newData[0].search_query) {
-    response.send(newData[0]);
-  } else if (request.query.data !== newData[0].search_query) {
-    throw new Error('Sorry, something went wrong');
+  let query = request.query['data'].toLowerCase();
+  const location = geoData.results[0].geometry.location;
+  const formAddr = geoData.results[0].formatted_address;
+  console.log('formAddr :', formAddr);
+  const searchquery = geoData.results[0].address_components[0].short_name.toLowerCase();
+  if (query !== searchquery) {
+    response.send(error);
+    console.log(error);
+    return null;
   }
-})
-
-app.get('/weather', (request, response) => {
+  response.send(new Geolocation (searchquery, formAddr, location));
+});
+// LOCATION CONSTRUCTOR FUNCTION
+function Geolocation (searchquery,formAddr,location) {
+  this.searchquery = searchquery;
+  this.formatted_query = formAddr;
+  this.latitude = location['lat'];
+  this.longitude = location['lng'];
+}
+// WEATHER PATH
+app.get('/weather', (request , response ) => {
+  const reply = [];
   const weatherData = require('./data/darksky.json');
-  const dailyWeatherData = weatherData.daily;
-  const dailyData = dailyWeatherData.data;
-  const weatherArr = [];
-  dailyData.forEach(val => {
-    weatherArr.push(new Forcast(val.summary, val.time));
-  })
-  if (request.query.data.search_query === newData[0].search_query) {
-    response.send(weatherArr);
-  } else {
-    throw new Error('Sorry, something went wrong');
+  const weatherArr = weatherData.daily.data
+  for (let i = 0; i < weatherArr.length; i++) {
+    reply.push(new Forecast (weatherArr[i].summary, weatherArr[i].time));
   }
+  response.send( reply );
 })
-
-function getDate(time) {
-  const day = ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'];
-  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-  let currentDate = `${day[time.getDay()]} ${month[time.getMonth()]} ${time.getDate()} ${time.getFullYear()}`;
-  return currentDate;
+// FORECAST CONSTRUCTOR FUNCTION
+function Forecast (summary, time) {
+  this.forecast = summary;
+  this.time = getDate(new Date(time));
+}
+// RETURNS FORMATTED DATE STRING
+function getDate (time) {
+  let day = weekday[time.getDay()];
+  let month = months[time.getMonth()];
+  let date = time.getDate();
+  let year = time.getFullYear();
+  return `${day} ${month} ${date} ${year}`;
 }
 
-app.get('/', function (req, res) {
-  res.send(new Error('my bad'));
-})
-
-app.listen(PORT, () => {
-  console.log(`App is on PORT: ${PORT}`);
-})
+app.listen(PORT);
