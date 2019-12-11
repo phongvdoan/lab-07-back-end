@@ -26,27 +26,26 @@ app.get('/location', (request, response) => {
     console.log(error);
     return null;
   }
-  response.send(new Geolocation (searchquery, formAddr, location));
+  response.send(new Geolocation(searchquery, formAddr, location));
 });
 // LOCATION CONSTRUCTOR FUNCTION
-function Geolocation (searchquery,formAddr,location) {
+function Geolocation(searchquery, formAddr, location) {
   this.searchquery = searchquery;
   this.formatted_query = formAddr;
   this.latitude = location['lat'];
   this.longitude = location['lng'];
 }
 // WEATHER PATH
-app.get('/weather', (request , response ) => {
-  const reply = [];
+app.get('/weather', (request, response) => {
   const weatherData = require('./data/darksky.json');
   const weatherArr = weatherData.daily.data
-  for (let i = 0; i < weatherArr.length; i++) {
-    reply.push(new Forecast (weatherArr[i].summary, weatherArr[i].time));
-  }
-  response.send( reply );
+  const reply = weatherArr.map(byDay => {
+    return new Forecast(byDay.summary, byDay.time);
+  })
+  response.send(reply);
 })
 // FORECAST CONSTRUCTOR FUNCTION
-function Forecast (summary, time) {
+function Forecast(summary, time) {
   this.forecast = summary;
   this.time = (new Date(time * 1000)).toDateString();
 }
