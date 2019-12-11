@@ -1,7 +1,7 @@
 # Lab 07
 
 **Author**: Phong Doan and Gable Shane
-**Version**: 3.0.0 (increment the patch/fix version number if you make more commits past your first submission)
+**Version**: 4.0.0 (increment the patch/fix version number if you make more commits past your first submission)
 
 ## Overview
 Use latitude and longitude data from the Google Geocoding API to request localized information from the DarkSky weather API and the Event API.
@@ -22,6 +22,7 @@ MAPS
 GEOCODING API
 SUPERAGENT
 DARKSKY API
+EVENTFUL API
 
 
 ## Change Log
@@ -37,5 +38,9 @@ DARKSKY API
 Phong And Shane
 
 12-11-2019 10:20AM - Application now pulls from DARKSKY API to grab data for weather of location submitted by user from front end
+## Credits and Collaborations
+Phong And Shane
+
+12-11-2019 12:20AM - Application now pulls from EVENTFUL API to grab data for Events near location submitted by user from front end
 ## Credits and Collaborations
 Phong And Shane
