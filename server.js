@@ -6,19 +6,14 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 app.use(cors());
-// GLOBAL VARIABLES AND DEPENDENCIES
+
+// GLOBAL VARIABLES
 let weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 let error = {
   status: 500,
   responseText: "Sorry, something went wrong",
 }
-const PORT = process.env.PORT || 3000;
-const express = require('express');
-const cors = require('cors');
-const app = express();
-require('dotenv').config();
-app.use(cors());
 
 // LOCATION PATH
 app.get('/location', (request, response) => {
