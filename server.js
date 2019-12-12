@@ -1,6 +1,7 @@
 'use strict';
 //DEPENDENCIES
 const PORT = process.env.PORT || 3000;
+const pg = require('pg');
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -13,22 +14,44 @@ let error = {
   status: 500,
   responseText: 'Sorry, something went wrong',
 }
-const GEOCODE_API_KEY = process.env.geocode_api;
-const WEATHER_API_KEY = process.env.weather_api;
-const EVENTBRITE_API_KEY = process.env.event_api;
+const GEOCODE_API_KEY = process.env.GEOCODE_API_KEY;
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+const EVENTBRITE_API_KEY = process.env.EVENTBRITE_API_KEY;
+const DATABASE_URL = process.env.DATABASE_URL;
 let locationSubmitted;
+
+// CONNECT TO SQL
+const client = new pg.Client(`${DATABASE_URL}`);
+client.on('error', error => console.error(error));
+client.connect();
+// GET INFO FROM SQL DATABASE
+// app.get('/', (req, res) => {
+//   const SQL = 'SELECT * FROM location;';
+//   client.query(SQL).then(sqlResponse => {
+//     console.log(sqlResponse);
+//     res.send(sqlResponse.rows);
+//   });
+// });
 
 // LOCATION PATH
 app.get('/location', (request, res) => {
-  let query = request.query.data;
-
+  let query = request.query.data.toLowerCase();
+  let SQL = `SELECT * FROM location`;
+  client.query(SQL).then( sqlResponse => {
+    for (let i = 0; i < sqlResponse.rows.length; i++) {
+      console.log(sqlResponse.rows[i].searchquery)
+      if (sqlResponse.rows[i].searchquery.toLowerCase() === query) {
+        res.send(sqlResponse.rows[i]);
+      }
+    }
+  }
+  )
   superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
     const location = response.body.results[0].geometry.location;
     const formAddr = response.body.results[0].formatted_address;
     const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
     if (query !== searchquery) {
       response.send(error);
-      console.log(error);
       return null;
     }
     locationSubmitted = new Geolocation(searchquery, formAddr, location);
@@ -71,13 +94,19 @@ app.get('/events', (request, response) => {
     return null;
   })
 })
-
+// EVENT CONSTRUCTOR FUNCTION
 function Event(link, name, event_date, summary='none') {
   this.link = link,
   this.name = name,
   this.event_date = event_date,
   this.summary = summary
 }
+
+// GET FROM DB
+
+
+
+
 
 app.listen(PORT, () => {
   console.log(`App is on PORT: ${PORT}`);
