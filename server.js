@@ -36,28 +36,23 @@ client.connect();
 // LOCATION PATH
 app.get('/location', (request, res) => {
   let query = request.query.data.toLowerCase();
-  let SQL = `SELECT * FROM location`;
-  client.query(SQL).then( sqlResponse => {
-    for (let i = 0; i < sqlResponse.rows.length; i++) {
-      console.log(sqlResponse.rows[i].searchquery)
-      if (sqlResponse.rows[i].searchquery.toLowerCase() === query) {
-        res.send(sqlResponse.rows[i]);
+  let queryCheck = queryDatabase(query);
+  console.log(queryCheck);
+  if (queryCheck) {
+    res.send(queryCheck);
+  } else {
+    superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
+      const location = response.body.results[0].geometry.location;
+      const formAddr = response.body.results[0].formatted_address;
+      const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
+      if (query !== searchquery) {
+        response.send(error);
+        return null;
       }
-    }
+      locationSubmitted = new Geolocation(searchquery, formAddr, location);
+      res.send(locationSubmitted);
+    })
   }
-  )
-  superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
-    const location = response.body.results[0].geometry.location;
-    const formAddr = response.body.results[0].formatted_address;
-    const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
-    if (query !== searchquery) {
-      response.send(error);
-      return null;
-    }
-    locationSubmitted = new Geolocation(searchquery, formAddr, location);
-    res.send(locationSubmitted);
-  })
-
 });
 // LOCATION CONSTRUCTOR FUNCTION
 function Geolocation(searchquery, formAddr, location) {
@@ -103,7 +98,21 @@ function Event(link, name, event_date, summary='none') {
 }
 
 // GET FROM DB
-
+function queryDatabase(query) {
+  let SQL = `SELECT * FROM location`;
+  let result = client.query(SQL).then( sqlResponse => {
+    for (let i = 0; i < sqlResponse.rows.length; i++) {
+      if (sqlResponse.rows[i].searchquery.toLowerCase() === query) {
+        console.log(sqlResponse.rows[i].searchquery,'this one')
+        return sqlResponse.rows[i].searchquery;
+      }
+      return false;
+    }
+  }
+  )
+  console.log(result)
+  return result;
+}
 
 
 
