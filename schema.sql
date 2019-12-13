@@ -7,3 +7,4 @@ location(
   latitude FLOAT NOT NULL,
   longitude FLOAT NOT NULL
   );
+  TRUNCATE TABLE location;
