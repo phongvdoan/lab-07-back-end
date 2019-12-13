@@ -31,7 +31,6 @@ app.get('/location', (request, res) => {
   let SQL = 'SELECT * FROM location WHERE searchquery=$1'
   client.query( SQL , [query]).then( sql => {
     if (!sql.rows[0]) {
-      console.log('WHYYYYY');
       superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
         const location = response.body.results[0].geometry.location;
         const formAddr = response.body.results[0].formatted_address;
@@ -42,10 +41,14 @@ app.get('/location', (request, res) => {
         }
         locationSubmitted = new Geolocation(searchquery, formAddr, location);
         res.send(locationSubmitted);
+        let insertArr = [searchquery, formAddr, location.lat, location.lng];
+        client.query('INSERT INTO location(searchquery, formatted_query, latitude, longitude) VALUES( $1, $2, $3, $4 )', insertArr);
+        console.log('found through API');
       })
     } else {
-      res.send(sql.rows[0])
-      locationSubmitted = new Geolocation(sql.rows[0].searchquery, sql.rows[0].formAddr, sql.rows[0].latitude, sql.rows[0].longitude);
+      res.send(sql.rows[0]);
+      locationSubmitted = sql.rows[0];
+      console.log('found in database');
     }
   });
 });
@@ -54,8 +57,8 @@ app.get('/location', (request, res) => {
 function Geolocation(searchquery, formAddr, location) {
   this.searchquery = searchquery;
   this.formatted_query = formAddr;
-  this.latitude = location['lat'];
-  this.longitude = location['lng'];
+  this.latitude = location.lat;
+  this.longitude = location.lng;
 }
 // WEATHER PATH
 app.get('/weather', (request, response) => {
