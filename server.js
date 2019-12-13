@@ -24,36 +24,32 @@ let locationSubmitted;
 const client = new pg.Client(`${DATABASE_URL}`);
 client.on('error', error => console.error(error));
 client.connect();
-// GET INFO FROM SQL DATABASE
-// app.get('/', (req, res) => {
-//   const SQL = 'SELECT * FROM location;';
-//   client.query(SQL).then(sqlResponse => {
-//     console.log(sqlResponse);
-//     res.send(sqlResponse.rows);
-//   });
-// });
 
 // LOCATION PATH
 app.get('/location', (request, res) => {
   let query = request.query.data.toLowerCase();
-  let queryCheck = queryDatabase(query);
-  console.log(queryCheck);
-  if (queryCheck) {
-    res.send(queryCheck);
-  } else {
-    superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
-      const location = response.body.results[0].geometry.location;
-      const formAddr = response.body.results[0].formatted_address;
-      const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
-      if (query !== searchquery) {
-        response.send(error);
-        return null;
-      }
-      locationSubmitted = new Geolocation(searchquery, formAddr, location);
-      res.send(locationSubmitted);
-    })
-  }
+  let SQL = 'SELECT * FROM location WHERE searchquery=$1'
+  client.query( SQL , [query]).then( sql => {
+    if (!sql.rows[0]) {
+      console.log('WHYYYYY');
+      superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
+        const location = response.body.results[0].geometry.location;
+        const formAddr = response.body.results[0].formatted_address;
+        const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
+        if (query !== searchquery) {
+          alert(error);
+          return null;
+        }
+        locationSubmitted = new Geolocation(searchquery, formAddr, location);
+        res.send(locationSubmitted);
+      })
+    } else {
+      res.send(sql.rows[0])
+      locationSubmitted = new Geolocation(sql.rows[0].searchquery, sql.rows[0].formAddr, sql.rows[0].latitude, sql.rows[0].longitude);
+    }
+  });
 });
+
 // LOCATION CONSTRUCTOR FUNCTION
 function Geolocation(searchquery, formAddr, location) {
   this.searchquery = searchquery;
@@ -95,23 +91,6 @@ function Event(link, name, event_date, summary='none') {
   this.name = name,
   this.event_date = event_date,
   this.summary = summary
-}
-
-// GET FROM DB
-function queryDatabase(query) {
-  let SQL = `SELECT * FROM location`;
-  let result = client.query(SQL).then( sqlResponse => {
-    for (let i = 0; i < sqlResponse.rows.length; i++) {
-      if (sqlResponse.rows[i].searchquery.toLowerCase() === query) {
-        console.log(sqlResponse.rows[i].searchquery,'this one')
-        return sqlResponse.rows[i].searchquery;
-      }
-      return false;
-    }
-  }
-  )
-  console.log(result)
-  return result;
 }
 
 
