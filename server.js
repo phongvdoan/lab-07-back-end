@@ -18,6 +18,7 @@ const GEOCODE_API_KEY = process.env.GEOCODE_API_KEY;
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 const EVENTBRITE_API_KEY = process.env.EVENTBRITE_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
+const MOVIE_API_KEY = process.env.MOVIE_API_KEY;
 let locationSubmitted;
 
 // CONNECT TO SQL
@@ -36,7 +37,7 @@ app.get('/location', (request, res) => {
         const formAddr = response.body.results[0].formatted_address;
         const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
         if (query !== searchquery) {
-          alert(error);
+          errorHandler();
           return null;
         }
         locationSubmitted = new Geolocation(searchquery, formAddr, location);
@@ -94,6 +95,43 @@ function Event(link, name, event_date, summary='none') {
   this.name = name,
   this.event_date = event_date,
   this.summary = summary
+}
+// MOVIE PATH
+app.get('/movies', ( request , response ) => {
+  superagent.get(`https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&language=en-US&query=${locationSubmitted.searchquery}&page=1&include_adult=false`).then( results => {
+    let container = JSON.parse(results.text);
+    let movieData = [];
+    container.results.forEach( function ( val , idx ) {
+      movieData.push( new Movie(val.original_title, val.overview, val.vote_average, val.backdrop_path, container.popularity, val.release_date));
+      console.log(movieData);
+    });
+    try {
+      response.send(container.results);
+    }
+    catch(error) {
+      console.log('errrr');
+      errorHandler(response)
+    }
+  })
+})
+// new Movie(container.original_title, container.overview, container.vote_average, container.backdrop_path, container.popularity, container.release_date
+// MOVIE CONSTRUCTOR
+function Movie (title, overview, average_votes, image, popularity, released_on) {
+  this.title = title;
+  this.overview = overview;
+  this.average_votes = average_votes;
+  this.image_url = 'https://image.tmdb.org/t/p/w500' + image;
+  this.popularity = popularity;
+  this.released_on = released_on;
+}
+
+
+
+
+//ERROR HANDLER
+function errorHandler(response) {
+  console.log(error);
+  response.status(500).send(error);
 }
 
 
