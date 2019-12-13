@@ -18,48 +18,48 @@ const GEOCODE_API_KEY = process.env.GEOCODE_API_KEY;
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 const EVENTBRITE_API_KEY = process.env.EVENTBRITE_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
+const MOVIE_API_KEY = process.env.MOVIE_API_KEY;
 let locationSubmitted;
 
 // CONNECT TO SQL
 const client = new pg.Client(`${DATABASE_URL}`);
 client.on('error', error => console.error(error));
 client.connect();
-// GET INFO FROM SQL DATABASE
-// app.get('/', (req, res) => {
-//   const SQL = 'SELECT * FROM location;';
-//   client.query(SQL).then(sqlResponse => {
-//     console.log(sqlResponse);
-//     res.send(sqlResponse.rows);
-//   });
-// });
 
 // LOCATION PATH
 app.get('/location', (request, res) => {
   let query = request.query.data.toLowerCase();
-  let queryCheck = queryDatabase(query);
-  console.log(queryCheck);
-  if (queryCheck) {
-    res.send(queryCheck);
-  } else {
-    superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
-      const location = response.body.results[0].geometry.location;
-      const formAddr = response.body.results[0].formatted_address;
-      const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
-      if (query !== searchquery) {
-        response.send(error);
-        return null;
-      }
-      locationSubmitted = new Geolocation(searchquery, formAddr, location);
-      res.send(locationSubmitted);
-    })
-  }
+  let SQL = 'SELECT * FROM location WHERE searchquery=$1'
+  client.query( SQL , [query]).then( sql => {
+    if (!sql.rows[0]) {
+      superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GEOCODE_API_KEY}`).then(response => {
+        const location = response.body.results[0].geometry.location;
+        const formAddr = response.body.results[0].formatted_address;
+        const searchquery = response.body.results[0].address_components[0].long_name.toLowerCase();
+        if (query !== searchquery) {
+          errorHandler();
+          return null;
+        }
+        locationSubmitted = new Geolocation(searchquery, formAddr, location);
+        res.send(locationSubmitted);
+        let insertArr = [searchquery, formAddr, location.lat, location.lng];
+        client.query('INSERT INTO location(searchquery, formatted_query, latitude, longitude) VALUES( $1, $2, $3, $4 )', insertArr);
+        console.log('found through API');
+      })
+    } else {
+      res.send(sql.rows[0]);
+      locationSubmitted = sql.rows[0];
+      console.log('found in database');
+    }
+  });
 });
+
 // LOCATION CONSTRUCTOR FUNCTION
 function Geolocation(searchquery, formAddr, location) {
   this.searchquery = searchquery;
   this.formatted_query = formAddr;
-  this.latitude = location['lat'];
-  this.longitude = location['lng'];
+  this.latitude = location.lat;
+  this.longitude = location.lng;
 }
 // WEATHER PATH
 app.get('/weather', (request, response) => {
@@ -96,22 +96,42 @@ function Event(link, name, event_date, summary='none') {
   this.event_date = event_date,
   this.summary = summary
 }
-
-// GET FROM DB
-function queryDatabase(query) {
-  let SQL = `SELECT * FROM location`;
-  let result = client.query(SQL).then( sqlResponse => {
-    for (let i = 0; i < sqlResponse.rows.length; i++) {
-      if (sqlResponse.rows[i].searchquery.toLowerCase() === query) {
-        console.log(sqlResponse.rows[i].searchquery,'this one')
-        return sqlResponse.rows[i].searchquery;
-      }
-      return false;
+// MOVIE PATH
+app.get('/movies', ( request , response ) => {
+  superagent.get(`https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&language=en-US&query=${locationSubmitted.searchquery}&page=1&include_adult=false`).then( results => {
+    let container = JSON.parse(results.text);
+    let movieData = [];
+    container.results.forEach( function ( val , idx ) {
+      movieData.push( new Movie(val.original_title, val.overview, val.vote_average, val.backdrop_path, container.popularity, val.release_date));
+      console.log(movieData);
+    });
+    try {
+      response.send(container.results);
     }
-  }
-  )
-  console.log(result)
-  return result;
+    catch(error) {
+      console.log('errrr');
+      errorHandler(response)
+    }
+  })
+})
+// new Movie(container.original_title, container.overview, container.vote_average, container.backdrop_path, container.popularity, container.release_date
+// MOVIE CONSTRUCTOR
+function Movie (title, overview, average_votes, image, popularity, released_on) {
+  this.title = title;
+  this.overview = overview;
+  this.average_votes = average_votes;
+  this.image_url = 'https://image.tmdb.org/t/p/w500' + image;
+  this.popularity = popularity;
+  this.released_on = released_on;
+}
+
+
+
+
+//ERROR HANDLER
+function errorHandler(response) {
+  console.log(error);
+  response.status(500).send(error);
 }
 
 

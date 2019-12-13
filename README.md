@@ -1,10 +1,10 @@
 # Lab 07
 
-**Author**: Phong Doan and Gable Shane
-**Version**: 4.0.0 (increment the patch/fix version number if you make more commits past your first submission)
+**Author**: Sergey Voytov and Gable Shane
+**Version**: 5.0.0 (increment the patch/fix version number if you make more commits past your first submission)
 
 ## Overview
-Use latitude and longitude data from the Google Geocoding API to request localized information from the DarkSky weather API and the Event API.
+Use latitude and longitude data from the Google Geocoding API to request localized information from the DarkSky weather API and the Event API. And use a SQL database to store information from previous searches.
 
 Cache-ing the data returned from the Geocoding API so that your server does not have to constantly re-fetch data that does not change.
 ## Getting Started
@@ -39,8 +39,10 @@ Phong And Shane
 
 12-11-2019 10:20AM - Application now pulls from DARKSKY API to grab data for weather of location submitted by user from front end
 ## Credits and Collaborations
-Phong And Shane
+Sergey And Shane
 
 12-11-2019 12:20AM - Application now pulls from EVENTFUL API to grab data for Events near location submitted by user from front end
 ## Credits and Collaborations
-Phong And Shane
+Sergey And Shane
+
+12-13-2019 9:13AM - Application now stores information in SQL and returns from database if query exists or creates new database entry if it does not.

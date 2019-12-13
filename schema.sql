@@ -1,4 +1,4 @@
-DROP TABLE location;
+DROP TABLE IF EXISTS location;
 CREATE TABLE IF NOT EXISTS
 location(
   id SERIAL PRIMARY KEY NOT NULL,
@@ -7,3 +7,4 @@ location(
   latitude FLOAT NOT NULL,
   longitude FLOAT NOT NULL
   );
+  TRUNCATE TABLE location;
